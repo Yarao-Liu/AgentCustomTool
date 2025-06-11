@@ -5,8 +5,8 @@ from pathlib import Path
 
 # 基础配置
 BASE_DIR = Path(__file__).parent
-MARKDOWN_DIR = BASE_DIR / "markdown"
 STATIC_DIR = BASE_DIR / "static"
+MARKDOWN_DIR = STATIC_DIR / "markdown"
 STATIC_HTML_DIR = STATIC_DIR / "html"
 
 # 文件上传配置

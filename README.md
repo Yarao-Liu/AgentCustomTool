@@ -183,13 +183,13 @@ mindmap/
 │   └── file_service.py    # 文件上传下载功能模块
 ├── README.md              # 项目说明
 ├── .gitignore            # Git 忽略文件
-├── markdown/             # Markdown 文件存储目录
-│   ├── *.md             # 原始 Markdown 文件
-│   └── ...
 └── static/              # 静态文件目录
     ├── *.pdf            # 上传的文件
     ├── *.png            # 上传的图片
     ├── ...              # 其他上传文件
+    ├── markdown/        # Markdown 文件存储目录
+    │   ├── *.md         # 原始 Markdown 文件
+    │   └── ...
     └── html/            # 生成的思维导图 HTML
         ├── *.html       # 思维导图文件
         └── ...
