@@ -128,14 +128,6 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
             detail=f"不支持的文件类型。支持的类型: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
-    # 检查文件大小
-    file_content = await file.read()
-    if len(file_content) > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=400,
-            detail=f"文件太大。最大允许大小: {MAX_FILE_SIZE // (1024*1024)}MB"
-        )
-
     try:
         # 确保static目录存在
         os.makedirs('static', exist_ok=True)
@@ -144,9 +136,33 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         unique_filename = generate_unique_filename(file.filename)
         file_path = Path('static') / unique_filename
 
-        # 保存文件
+        # 检查文件大小（通过file.size属性，如果可用）
+        file_size = 0
+
+        # 保存文件 - 使用流式写入避免内存问题
         with open(file_path, 'wb') as f:
-            f.write(file_content)
+            # 重置文件指针到开始位置
+            await file.seek(0)
+
+            # 分块读取和写入文件
+            chunk_size = 8192  # 8KB chunks
+            while True:
+                chunk = await file.read(chunk_size)
+                if not chunk:
+                    break
+
+                file_size += len(chunk)
+
+                # 检查文件大小
+                if file_size > MAX_FILE_SIZE:
+                    # 删除已创建的文件
+                    file_path.unlink(missing_ok=True)
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"文件太大。最大允许大小: {MAX_FILE_SIZE // (1024*1024)}MB"
+                    )
+
+                f.write(chunk)
 
         # 返回下载链接，拼接base URL
         base_url = str(request.base_url)
@@ -157,7 +173,7 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
             "original_filename": file.filename,
             "saved_filename": unique_filename,
             "download_url": download_url,
-            "file_size": len(file_content)
+            "file_size": file_size
         }
 
     except Exception as e:
