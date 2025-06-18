@@ -2,8 +2,10 @@
 /static
 /html
 /uploads
-
+/build
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.spec
+*.xml

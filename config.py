@@ -2,10 +2,20 @@
 配置文件
 """
 import configparser
+import sys
 from pathlib import Path
 
+def get_base_dir():
+    """获取基础目录，兼容exe和开发环境"""
+    if getattr(sys, 'frozen', False):
+        # 如果是打包后的exe，使用exe所在目录
+        return Path(sys.executable).parent
+    else:
+        # 如果是开发环境，使用脚本所在目录
+        return Path(__file__).parent
+
 # 基础配置
-BASE_DIR = Path(__file__).parent
+BASE_DIR = get_base_dir()
 STATIC_DIR = BASE_DIR / "static"
 MARKDOWN_DIR = STATIC_DIR / "markdown"
 STATIC_HTML_DIR = STATIC_DIR / "html"
@@ -13,7 +23,17 @@ STATIC_HTML_DIR = STATIC_DIR / "html"
 # 读取ini配置文件
 config = configparser.ConfigParser()
 config_file = BASE_DIR / "config.ini"
+
+# 添加调试信息
+print(f"Base directory: {BASE_DIR}")
+print(f"Config file path: {config_file}")
+print(f"Config file exists: {config_file.exists()}")
+
 config.read(config_file, encoding='utf-8')
+
+# 检查配置文件是否成功读取
+if not config.sections():
+    raise FileNotFoundError(f"配置文件未找到或为空: {config_file}")
 
 # 文件上传配置
 MAX_FILE_SIZE = config.getint('file_upload', 'max_file_size_mb') * 1024 * 1024  # 转换为字节

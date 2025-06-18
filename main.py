@@ -84,11 +84,31 @@ def list_files(request: Request):
 
 # ==================== 应用启动 ====================
 
+def is_running_as_exe():
+    """检查是否作为exe运行"""
+    import sys
+    return getattr(sys, 'frozen', False)
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "main:app",
-        host=SERVER_HOST,
-        port=SERVER_PORT,
-        reload=DEBUG
-    )
+    
+    # 如果是exe运行，强制关闭热加载
+    reload_enabled = False if is_running_as_exe() else DEBUG
+    
+    print(f"打包后关闭热加载: reload={reload_enabled}")
+    
+    # 在exe环境中直接传递app对象，而不是字符串
+    if is_running_as_exe():
+        uvicorn.run(
+            app,  # 直接传递app对象
+            host=SERVER_HOST,
+            port=SERVER_PORT,
+            reload=False
+        )
+    else:
+        uvicorn.run(
+            "main:app",  # 开发环境使用字符串引用
+            host=SERVER_HOST,
+            port=SERVER_PORT,
+            reload=reload_enabled
+        )
