@@ -22,7 +22,8 @@
 
 ### 🏗️ 架构特性
 - ✅ 模块化设计（功能分离）
-- ✅ 统一配置管理
+- ✅ INI 配置文件管理（配置与代码分离）
+- ✅ 统一配置管理和类型转换
 - ✅ 热重载支持
 - ✅ 清晰的代码结构
 - ✅ 易于维护和扩展
@@ -63,13 +64,22 @@ pip install fastapi uvicorn python-multipart
 npm install -g markmap-cli
 ```
 
+### 配置设置
+
+首次运行前，请确保 `config.ini` 文件存在。如果不存在，系统将使用默认配置运行。
+
+可以根据需要修改 `config.ini` 中的配置项：
+- 服务器端口和主机地址
+- 文件上传大小限制
+- 调试模式开关
+
 ### 启动服务
 
 ```bash
 python main.py
 ```
 
-服务将在 `http://0.0.0.0:5001` 启动，支持热重载
+服务将在 `http://0.0.0.0:6066` 启动，支持热重载
 
 ## API 接口
 
@@ -99,7 +109,7 @@ python main.py
 ### 1. 生成思维导图
 
 ```bash
-curl -X POST "http://localhost:5001/upload" \
+curl -X POST "http://localhost:6066/upload" \
   -H "Content-Type: text/plain" \
   -d "# 我的思维导图
 ## 分支1
@@ -113,20 +123,20 @@ curl -X POST "http://localhost:5001/upload" \
 ### 2. 上传文件
 
 ```bash
-curl -X POST "http://localhost:5001/upload-file" \
+curl -X POST "http://localhost:6066/upload-file" \
   -F "file=@example.pdf"
 ```
 
 ### 3. 获取文件列表
 
 ```bash
-curl -X GET "http://localhost:5001/files"
+curl -X GET "http://localhost:6066/files"
 ```
 
 ### 4. 下载文件
 
 ```bash
-curl -X GET "http://localhost:5001/download/filename.pdf"
+curl -X GET "http://localhost:6066/download/filename.pdf"
 ```
 
 ## 项目架构
@@ -150,10 +160,11 @@ curl -X GET "http://localhost:5001/download/filename.pdf"
 - 服务启动配置
 
 #### 2. config.py - 配置管理
-- 集中化配置常量
+- 读取 ini 配置文件
+- 集中化配置常量管理
 - 目录路径管理
 - MIME 类型映射
-- 服务器参数配置
+- 配置参数类型转换
 
 #### 3. module/mindmap_service.py - 思维导图服务
 - `MindmapService` 类封装所有思维导图相关功能
@@ -176,7 +187,8 @@ curl -X GET "http://localhost:5001/download/filename.pdf"
 ```
 mindmap/
 ├── main.py                 # FastAPI 启动类和路由注册
-├── config.py              # 配置文件
+├── config.py              # 配置文件读取和管理
+├── config.ini             # 项目配置文件 (NEW)
 ├── module/                # 核心功能模块目录
 │   ├── __init__.py        # 模块初始化文件
 │   ├── mindmap_service.py # 思维导图相关功能模块
@@ -197,13 +209,40 @@ mindmap/
 
 ## 配置说明
 
-在 `config.py` 中可以修改以下配置：
+### 配置文件结构
 
-- `MAX_FILE_SIZE`: 最大文件大小（默认 50MB）
+项目现在采用 `config.ini` 文件进行配置管理，配置与代码分离，易于维护和部署：
+
+#### config.ini 配置项
+
+```ini
+[server]
+host = 0.0.0.0
+port = 6066
+debug = true
+
+[file_upload]
+max_file_size_mb = 50
+chunk_size_kb = 8
+```
+
+#### 配置说明
+
+**服务器配置 [server]**
+- `host`: 服务器绑定地址（默认 0.0.0.0）
+- `port`: 服务器端口（默认 6066）
+- `debug`: 调试模式开关（默认 true）
+
+**文件上传配置 [file_upload]**
+- `max_file_size_mb`: 最大文件大小，单位MB（默认 50）
+- `chunk_size_kb`: 文件上传分块大小，单位KB（默认 8）
+
+#### 其他配置
+
+在 `config.py` 中还包含以下硬编码配置：
 - `ALLOWED_EXTENSIONS`: 允许的文件类型
-- `SERVER_HOST` 和 `SERVER_PORT`: 服务器地址和端口（默认 0.0.0.0:5001）
-- `CHUNK_SIZE`: 文件上传分块大小（默认 8KB）
 - `MIME_TYPES`: 文件类型与 MIME 类型映射
+- 目录路径配置
 
 ## 注意事项
 
@@ -238,8 +277,8 @@ mindmap/
 
 启动服务后，可以访问以下地址查看自动生成的 API 文档：
 
-- **Swagger UI**: http://localhost:5001/docs
-- **ReDoc**: http://localhost:5001/redoc
+- **Swagger UI**: http://localhost:6066/docs
+- **ReDoc**: http://localhost:6066/redoc
 
 ## 许可证
 
