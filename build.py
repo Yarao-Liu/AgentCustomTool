@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-多工具Python打包脚本
-自动尝试不同的打包工具解决Python 3.10兼容性问题
+Python 打包脚本
+提供两种打包方式供用户选择
 """
 
 import os
@@ -49,8 +49,8 @@ def check_dependencies():
     return True
 
 def try_cx_freeze():
-    """尝试使用cx_Freeze"""
-    print_step("3a/4", "尝试 cx_Freeze 打包")
+    """使用cx_Freeze打包"""
+    print_step("3/4", "使用 cx_Freeze 打包")
     
     try:
         # 安装cx_Freeze
@@ -104,9 +104,46 @@ setup(
         print(f"× cx_Freeze 失败: {str(e)}")
         return False
 
+def try_pyinstaller():
+    """使用PyInstaller打包"""
+    print_step("3/4", "使用 PyInstaller 打包")
+    
+    try:
+        # 安装PyInstaller
+        print("安装 PyInstaller...")
+        subprocess.run([sys.executable, '-m', 'pip', 'install', 'pyinstaller'], 
+                      check=True, capture_output=True)
+        
+        # PyInstaller命令
+        cmd = [
+            sys.executable, '-m', 'PyInstaller',
+            '--onefile',
+            '--console', 
+            '--name=MindmapFileService',
+            '--add-data=config.ini;.',
+            '--add-data=module;module',
+            '--noconfirm',
+            'main.py'
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        
+        exe_path = Path('dist/MindmapFileService.exe')
+        if exe_path.exists():
+            print(f"✓ PyInstaller 构建成功!")
+            print(f"✓ 文件位置: {exe_path.absolute()}")
+            return True
+        else:
+            print(f"× PyInstaller 失败: {result.stderr}")
+            return False
+            
+    except Exception as e:
+        print(f"× PyInstaller 失败: {str(e)}")
+        return False
+
 def try_nuitka():
-    """尝试使用Nuitka"""
-    print_step("3b/4", "尝试 Nuitka 打包")
+    """使用Nuitka打包"""
+    print_step("3/4", "使用 Nuitka 打包")
     
     try:
         # 安装Nuitka
@@ -114,9 +151,11 @@ def try_nuitka():
         subprocess.run([sys.executable, '-m', 'pip', 'install', 'nuitka'], 
                       check=True, capture_output=True)
         
+        # Nuitka命令
         cmd = [
             sys.executable, '-m', 'nuitka',
             '--onefile',
+            '--standalone',
             '--include-package=fastapi',
             '--include-package=uvicorn', 
             '--include-data-dir=module=module',
@@ -141,37 +180,6 @@ def try_nuitka():
         print(f"× Nuitka 失败: {str(e)}")
         return False
 
-def try_pyinstaller_minimal():
-    """尝试最简PyInstaller"""
-    print_step("3c/4", "尝试最简 PyInstaller")
-    
-    try:
-        # 最基础的命令，不添加任何复杂选项
-        cmd = [
-            sys.executable, '-m', 'PyInstaller',
-            '--onefile',
-            '--console', 
-            '--name=MindmapFileService',
-            '--noconfirm',
-            'main.py'
-        ]
-        
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        
-        exe_path = Path('dist/MindmapFileService.exe')
-        if exe_path.exists():
-            print(f"✓ 最简 PyInstaller 构建成功!")
-            print(f"✓ 文件位置: {exe_path.absolute()}")
-            print("⚠ 注意：可能需要手动复制 config.ini 和 module 文件夹到exe目录")
-            return True
-        else:
-            print(f"× 最简 PyInstaller 失败")
-            return False
-            
-    except Exception as e:
-        print(f"× 最简 PyInstaller 失败: {str(e)}")
-        return False
-
 def verify_and_finalize():
     """验证并完成"""
     print_step("4/4", "完成打包")
@@ -193,18 +201,26 @@ def verify_and_finalize():
         print("使用说明:")
         print("1. 确保已安装 Node.js 和 markmap-cli")
         print("2. 运行: npm install -g markmap-cli")
-        print("3. 将 config.ini 复制到exe同目录")
-        print("4. 将 module 文件夹复制到exe同目录")
-        print("5. 双击exe运行")
+        print("3. 双击exe运行")
         return True
     else:
-        print("× 所有打包方法都失败了")
+        print("× 打包失败")
         return False
+
+def show_menu():
+    """显示菜单"""
+    print("\n" + "="*50)
+    print("Python 打包工具")
+    print("="*50)
+    print("请选择打包方式:")
+    print("1. cx_Freeze (推荐，包含依赖文件)")
+    print("2. PyInstaller (单文件打包)")
+    print("3. Nuitka (高性能编译打包)")
+    print("="*50)
 
 def main():
     """主函数"""
-    print("Python 多工具打包脚本")
-    print("适用于解决 Python 3.10 + PyInstaller 兼容性问题")
+    print("Python 打包脚本")
     
     try:
         # 1. 清理文件
@@ -215,22 +231,29 @@ def main():
             print("× 项目文件检查失败")
             return False
         
-        # 3. 尝试不同的打包工具
-        success = False
-        
-        # 尝试 cx_Freeze（推荐）
-        if try_cx_freeze():
-            success = True
-        elif try_nuitka():
-            success = True
-        elif try_pyinstaller_minimal():
-            success = True
+        # 3. 显示菜单并获取用户选择
+        while True:
+            show_menu()
+            choice = input("请输入选择 (1, 2 或 3): ").strip()
+            
+            if choice == '1':
+                success = try_cx_freeze()
+                break
+            elif choice == '2':
+                success = try_pyinstaller()
+                break
+            elif choice == '3':
+                success = try_nuitka()
+                break
+            else:
+                print("× 无效选择，请输入 1, 2 或 3")
+                continue
         
         if success:
             verify_and_finalize()
             return True
         else:
-            print("\n× 所有打包方法都失败了！")
+            print("\n× 打包失败！")
             print("建议：")
             print("1. 尝试在 Python 3.9 环境中运行")
             print("2. 使用虚拟环境隔离依赖")
