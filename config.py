@@ -51,6 +51,9 @@ SERVER_HOST = config.get('server', 'host')
 SERVER_PORT = config.getint('server', 'port')
 DEBUG = config.getboolean('server', 'debug')
 
+# 思维导图配置
+USE_PYTHON_VERSION = config.getboolean('mindmap', 'use_python_version', fallback=True)
+
 # MIME类型映射
 MIME_TYPES = {
     '.pdf': 'application/pdf',
