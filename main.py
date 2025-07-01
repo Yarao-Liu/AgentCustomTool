@@ -3,9 +3,8 @@ FastAPI 主应用程序
 """
 from fastapi import FastAPI, Request, File, UploadFile
 from module.mindmap_service import MindmapService
-from module.mindmap_service_python import MindmapServicePython
 from module.file_service import FileService
-from config import SERVER_HOST, SERVER_PORT, DEBUG, USE_PYTHON_VERSION
+from config import SERVER_HOST, SERVER_PORT, DEBUG
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -49,11 +48,7 @@ async def upload_markdown(request: Request):
     content = await request.body()
     content = content.decode('utf-8')
     
-    # 根据配置选择使用哪个版本的思维导图服务
-    if USE_PYTHON_VERSION:
-        preview_url = await MindmapServicePython.process_markdown(request, content)
-    else:
-        preview_url = await MindmapService.process_markdown(request, content)
+    preview_url = await MindmapService.process_markdown(request, content)
     return preview_url
 
 @app.get("/html/{filename}")
@@ -61,11 +56,7 @@ def get_html(filename: str):
     """
     获取生成的思维导图HTML文件
     """
-    # 根据配置选择使用哪个版本的思维导图服务
-    if USE_PYTHON_VERSION:
-        return MindmapServicePython.get_html_file(filename)
-    else:
-        return MindmapService.get_html_file(filename)
+    return MindmapService.get_html_file(filename)
 
 # ==================== 文件管理相关路由 ====================
 

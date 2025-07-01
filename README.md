@@ -50,7 +50,7 @@
 
 ### 环境要求
 - Python 3.7+
-- Node.js (可选，用于 markmap-cli)
+- Node.js (用于 markmap-cli)
 
 ### 安装依赖
 
@@ -59,29 +59,16 @@
 pip install fastapi uvicorn python-multipart
 ```
 
-2. **安装 markmap-cli (可选)**:
+2. **安装 markmap-cli**:
 ```bash
 npm install -g markmap-cli
 ```
 
-### 离线部署说明
+### 快速启动
 
-项目支持两种思维导图生成模式：
-
-1. **Python 模式（推荐，无需 Node.js）**：
-   - 默认启用，无需额外安装
-   - 使用纯 Python 实现的思维导图生成器
-   - 支持 Markdown 标题和列表解析
-   - 生成美观的 HTML 思维导图
-
-2. **Node.js 模式（需要 markmap-cli）**：
-   - 需要安装 Node.js 和 markmap-cli
-   - 功能更强大，支持更多 Markdown 特性
-   - 在 `config.ini` 中设置 `use_python_version = false` 启用
-
-**快速启动**：
-- 双击 `start.bat` 文件即可启动服务
-- 或直接运行：`python main.py`
+```bash
+python main.py
+```
 
 ### 配置设置
 
