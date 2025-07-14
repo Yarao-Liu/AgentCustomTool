@@ -10,3 +10,4 @@ __pycache__/
 *.spec
 *.xml
 /dist
+/node_modules_global/
