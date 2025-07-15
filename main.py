@@ -2,6 +2,7 @@
 FastAPI 主应用程序
 """
 from fastapi import FastAPI, Request, File, UploadFile
+from fastapi.staticfiles import StaticFiles
 from module.mindmap_service import MindmapService
 from module.file_service import FileService
 from config import SERVER_HOST, SERVER_PORT, DEBUG
@@ -12,6 +13,10 @@ app = FastAPI(
     description="思维导图生成和文件管理服务",
     version="1.0.0"
 )
+
+# 挂载静态文件目录
+app.mount("/js", StaticFiles(directory="js"), name="js")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ==================== 基础路由 ====================
 
@@ -51,6 +56,17 @@ async def upload_markdown(request: Request):
     preview_url = await MindmapService.process_markdown(request, content)
     return preview_url
 
+
+@app.post("/upload2")
+async def upload_markdown_replace(request: Request):
+    """
+    上传Markdown文本，生成思维导图
+    """
+    content = await request.body()
+    content = content.decode('utf-8')
+
+    preview_url = await MindmapService.process_markdown_replace(request, content)
+    return preview_url
 @app.get("/html/{filename}")
 def get_html(filename: str):
     """
