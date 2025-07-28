@@ -11,3 +11,6 @@ __pycache__/
 *.xml
 /dist
 /node_modules_global/
+/uv.lock
+/.python-version
+/pyproject.toml

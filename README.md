@@ -20,6 +20,19 @@
 - ✅ 文件大小限制（50MB）
 - ✅ 流式文件处理（避免内存问题）
 
+### 🌐 静态文件暴露功能
+- ✅ JS 文件通过 HTTP 端口对外暴露
+- ✅ 动态配置静态文件目录
+- ✅ 支持 CSS、JS、图片等静态资源
+- ✅ 自动生成文件访问 URL
+- ✅ 文件列表 API 接口
+
+### 📦 打包部署功能
+- ✅ PyInstaller 单文件打包
+- ✅ 支持 exe 文件独立运行
+- ✅ 自动包含配置文件和静态资源
+- ✅ 兼容开发和生产环境
+
 ### 🏗️ 架构特性
 - ✅ 模块化设计（功能分离）
 - ✅ INI 配置文件管理（配置与代码分离）
@@ -27,6 +40,7 @@
 - ✅ 热重载支持
 - ✅ 清晰的代码结构
 - ✅ 易于维护和扩展
+- ✅ 动态静态文件挂载
 
 ## 支持的文件类型
 
@@ -56,7 +70,7 @@
 
 1. **安装 Python 依赖**:
 ```bash
-pip install fastapi uvicorn python-multipart
+pip install fastapi uvicorn python-multipart pyinstaller
 ```
 
 2. **安装 markmap-cli**:
@@ -78,6 +92,7 @@ python main.py
 - 服务器端口和主机地址
 - 文件上传大小限制
 - 调试模式开关
+- 静态文件暴露配置
 
 ### 启动服务
 
@@ -90,10 +105,14 @@ python main.py
 ## API 接口
 
 ### 1. 根路径
-- **GET** `/` - 获取服务状态
+- **GET** `/` - 获取服务状态和可用功能列表
 
 ### 2. 思维导图功能
 - **POST** `/upload` - 上传 Markdown 文本，生成思维导图
+  - 请求体: Markdown 文本内容
+  - 返回: 思维导图预览链接
+
+- **POST** `/upload2` - 上传 Markdown 文本，替换现有思维导图
   - 请求体: Markdown 文本内容
   - 返回: 思维导图预览链接
 
@@ -109,6 +128,16 @@ python main.py
 
 - **GET** `/files` - 获取所有已上传文件列表
   - 返回: 文件列表，包含文件名、大小、修改时间和下载链接
+
+### 4. 静态文件功能
+- **GET** `/js-files` - 获取可用的 JS 文件列表
+  - 返回: JS 文件列表和访问 URL
+
+- **GET** `/js/{filename}` - 直接访问 JS 文件
+  - 支持访问 js 目录下的所有文件
+
+- **GET** `/static/{filename}` - 访问静态文件
+  - 支持访问 static 目录下的所有文件
 
 ## 使用示例
 
@@ -145,6 +174,44 @@ curl -X GET "http://localhost:6066/files"
 curl -X GET "http://localhost:6066/download/filename.pdf"
 ```
 
+### 5. 获取 JS 文件列表
+
+```bash
+curl -X GET "http://localhost:6066/js-files"
+```
+
+### 6. 访问 JS 文件
+
+```bash
+curl -X GET "http://localhost:6066/js/index.js"
+```
+
+## 打包部署
+
+### PyInstaller 打包
+
+将项目打包成独立的 exe 文件：
+
+```bash
+python -m PyInstaller --onefile --add-data "config.ini;." --add-data "js;js" --add-data "static;static" --add-data "module;module" main.py
+```
+
+### 打包后的使用
+
+1. **运行 exe 文件**:
+   ```bash
+   dist/mindmap.exe
+   ```
+
+2. **访问服务**:
+   - 服务主页: `http://localhost:6066/`
+   - JS 文件: `http://localhost:6066/js/index.js`
+
+3. **部署说明**:
+   - 将 `dist/mindmap.exe` 复制到目标目录
+   - 确保目标目录包含 `config.ini` 文件
+   - 双击运行即可启动服务
+
 ## 项目架构
 
 ### 模块化设计
@@ -152,7 +219,7 @@ curl -X GET "http://localhost:6066/download/filename.pdf"
 项目采用清晰的模块化架构，功能分离，易于维护：
 
 - **main.py** - FastAPI 应用入口和路由注册
-- **config.py** - 统一配置管理
+- **config.py** - 统一配置管理和静态文件配置
 - **module/** - 核心功能模块目录
   - **mindmap_service.py** - 思维导图生成服务
   - **file_service.py** - 文件上传下载服务
@@ -161,6 +228,7 @@ curl -X GET "http://localhost:6066/download/filename.pdf"
 
 #### 1. main.py - 应用入口
 - FastAPI 应用初始化
+- 动态静态文件挂载
 - 路由注册和管理
 - 统一的 API 文档生成
 - 服务启动配置
@@ -168,6 +236,7 @@ curl -X GET "http://localhost:6066/download/filename.pdf"
 #### 2. config.py - 配置管理
 - 读取 ini 配置文件
 - 集中化配置常量管理
+- 静态文件暴露配置
 - 目录路径管理
 - MIME 类型映射
 - 配置参数类型转换
@@ -183,10 +252,6 @@ curl -X GET "http://localhost:6066/download/filename.pdf"
 - 流式文件上传（避免内存问题）
 - 智能 MIME 类型识别
 - 文件列表和下载管理
-- 集中化配置常量
-- 目录路径管理
-- MIME 类型映射
-- 服务器参数配置
 
 ### 目录结构
 
@@ -194,30 +259,37 @@ curl -X GET "http://localhost:6066/download/filename.pdf"
 mindmap/
 ├── main.py                 # FastAPI 启动类和路由注册
 ├── config.py              # 配置文件读取和管理
-├── config.ini             # 项目配置文件 (NEW)
+├── config.ini             # 项目配置文件
+├── build.spec             # PyInstaller 打包配置
+├── test_js_exposure.py    # JS 文件暴露测试脚本
+├── JS_EXPOSURE_README.md  # JS 文件暴露功能说明
 ├── module/                # 核心功能模块目录
 │   ├── __init__.py        # 模块初始化文件
 │   ├── mindmap_service.py # 思维导图相关功能模块
 │   └── file_service.py    # 文件上传下载功能模块
-├── README.md              # 项目说明
-├── .gitignore            # Git 忽略文件
-└── static/              # 静态文件目录
-    ├── *.pdf            # 上传的文件
-    ├── *.png            # 上传的图片
-    ├── ...              # 其他上传文件
-    ├── markdown/        # Markdown 文件存储目录
-    │   ├── *.md         # 原始 Markdown 文件
-    │   └── ...
-    └── html/            # 生成的思维导图 HTML
-        ├── *.html       # 思维导图文件
-        └── ...
+├── js/                    # JavaScript 文件目录
+│   ├── index.js           # 主 JavaScript 文件
+│   ├── index2.js          # 备用 JavaScript 文件
+│   ├── d3.min.js          # D3.js 库
+│   ├── style.css          # 样式文件
+│   └── browser/           # 浏览器专用文件
+│       └── index.js       # 浏览器 JavaScript
+├── static/                # 静态文件目录
+│   ├── *.pdf             # 上传的文件
+│   ├── *.png             # 上传的图片
+│   ├── markdown/         # Markdown 文件存储目录
+│   │   ├── *.md          # 原始 Markdown 文件
+│   └── html/             # 生成的思维导图 HTML
+│       ├── *.html        # 思维导图文件
+└── dist/                 # 打包后的文件目录
+    └── mindmap.exe       # 可执行文件
 ```
 
 ## 配置说明
 
 ### 配置文件结构
 
-项目现在采用 `config.ini` 文件进行配置管理，配置与代码分离，易于维护和部署：
+项目采用 `config.ini` 文件进行配置管理，配置与代码分离，易于维护和部署：
 
 #### config.ini 配置项
 
@@ -230,6 +302,12 @@ debug = true
 [file_upload]
 max_file_size_mb = 50
 chunk_size_kb = 8
+
+[static_files]
+enable_js_exposure = true
+enable_static_exposure = true
+js_directory = js
+static_directory = static
 ```
 
 #### 配置说明
@@ -243,12 +321,27 @@ chunk_size_kb = 8
 - `max_file_size_mb`: 最大文件大小，单位MB（默认 50）
 - `chunk_size_kb`: 文件上传分块大小，单位KB（默认 8）
 
-#### 其他配置
+**静态文件配置 [static_files]**
+- `enable_js_exposure`: 是否启用 JS 文件暴露（默认 true）
+- `enable_static_exposure`: 是否启用静态文件暴露（默认 true）
+- `js_directory`: JS 文件目录（默认 js）
+- `static_directory`: 静态文件目录（默认 static）
 
-在 `config.py` 中还包含以下硬编码配置：
-- `ALLOWED_EXTENSIONS`: 允许的文件类型
-- `MIME_TYPES`: 文件类型与 MIME 类型映射
-- 目录路径配置
+## 测试功能
+
+### JS 文件暴露测试
+
+运行测试脚本验证 JS 文件暴露功能：
+
+```bash
+python test_js_exposure.py
+```
+
+测试内容包括：
+- 基础 API 功能测试
+- JS 文件列表 API 测试
+- 具体 JS 文件访问测试
+- 示例 URL 访问测试
 
 ## 注意事项
 
@@ -260,7 +353,9 @@ chunk_size_kb = 8
 6. **模块化架构**: 功能已分离到不同模块，便于维护和扩展
 7. **流式处理**: 文件上传使用流式处理，避免大文件内存问题
 8. **热重载**: 开发模式支持代码热重载
-9. **离线部署**: 需要是 npm install markmap --prefix ./node_modules_global 将依赖存储到当前的文件夹以备迁移
+9. **静态文件暴露**: JS 文件通过 HTTP 端口对外暴露，支持跨域访问
+10. **打包部署**: 支持 PyInstaller 单文件打包，便于部署
+11. **离线部署**: 需要是 npm install markmap --prefix ./node_modules_global 将依赖存储到当前的文件夹以备迁移
 
 ## 开发指南
 
@@ -272,6 +367,7 @@ chunk_size_kb = 8
 2. **添加新的思维导图功能**：在 `module/mindmap_service.py` 中扩展 `MindmapService` 类
 3. **添加新的路由**：在 `main.py` 中注册新的 API 端点
 4. **修改配置**：在 `config.py` 中添加新的配置项
+5. **添加新的静态文件类型**：在 `config.py` 中的 `STATIC_FILES_CONFIG` 中添加配置
 
 ### 代码结构原则
 
@@ -279,6 +375,7 @@ chunk_size_kb = 8
 - **依赖注入**: 通过配置文件管理依赖
 - **错误处理**: 统一的异常处理机制
 - **类型提示**: 使用 Python 类型提示提高代码质量
+- **配置驱动**: 通过配置文件控制功能开关
 
 ## 自动 API 文档
 

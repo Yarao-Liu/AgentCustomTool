@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from module.mindmap_service import MindmapService
 from module.file_service import FileService
-from config import SERVER_HOST, SERVER_PORT, DEBUG
+from config import SERVER_HOST, SERVER_PORT, DEBUG, STATIC_FILES_CONFIG, get_available_js_files, get_static_file_url
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -14,15 +14,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# 挂载静态文件目录
-app.mount("/js", StaticFiles(directory="js"), name="js")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# 动态挂载静态文件目录
+for static_type, config in STATIC_FILES_CONFIG.items():
+    if config['enabled']:
+        app.mount(config['url_prefix'], StaticFiles(directory=config['path']), name=static_type)
+        print(f"已挂载静态文件: {config['url_prefix']} -> {config['path']}")
 
 # ==================== 基础路由 ====================
 
 @app.get("/")
 def root():
     """根路径，返回API信息"""
+    available_js_files = get_available_js_files()
+    
     return {
         "message": "Mindmap & File Management Service",
         "version": "1.0.0",
@@ -39,8 +43,31 @@ def root():
                 "upload": "POST /upload-file - 上传文件",
                 "download": "GET /download/{filename} - 下载文件",
                 "list": "GET /files - 获取文件列表"
+            },
+            "static_files": {
+                "js": "GET /js/* - 访问JavaScript文件",
+                "static": "GET /static/* - 访问静态文件"
             }
+        },
+        "js_files": {
+            "available": available_js_files,
+            "example_urls": [
+                get_static_file_url("index.js", "js"),
+                get_static_file_url("style.css", "js"),
+                get_static_file_url("d3.min.js", "js")
+            ]
         }
+    }
+
+@app.get("/js-files")
+def list_js_files():
+    """列出所有可用的JS文件"""
+    js_files = get_available_js_files()
+    return {
+        "message": "可用的JS文件列表",
+        "files": js_files,
+        "total_count": len(js_files),
+        "access_urls": [get_static_file_url(f, "js") for f in js_files]
     }
 
 # ==================== 思维导图相关路由 ====================
