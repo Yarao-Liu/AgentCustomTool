@@ -21,8 +21,8 @@ MARKDOWN_DIR = STATIC_DIR / "markdown"
 STATIC_HTML_DIR = STATIC_DIR / "html"
 
 # 静态文件配置
-JS_DIR = BASE_DIR / "js"
-CSS_DIR = BASE_DIR / "js"  # CSS文件也在js目录中
+JS_DIR = BASE_DIR / "htmljs"
+CSS_DIR = BASE_DIR / "htmljs"  # CSS文件也在htmljs目录中
 
 # 读取ini配置文件
 config = configparser.ConfigParser()
