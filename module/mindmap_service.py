@@ -185,7 +185,7 @@ class MindmapService:
                 html_content = f.read()
             
             # 替换CDN链接为本地路径
-            html_content = html_content.replace('https://cdn.jsdelivr.net/npm/d3@7.9.0/dist', '../html')
+            html_content = html_content.replace('https://cdn.jsdelivr.net/npm/d3@7.9.0/dist', '../htmljs')
             html_content = html_content.replace('https://cdn.jsdelivr.net/npm/markmap-toolbar@0.18.10/dist', '../htmljs')
             html_content = html_content.replace('https://cdn.jsdelivr.net/npm/markmap-view@0.18.10/dist/browser/index.js', '../htmljs/index2.js')
             html_content = html_content.replace('https://cdn.jsdelivr.net/npm/markmap-toolbar@0.18.10/dist', '../htmljs')
