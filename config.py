@@ -52,7 +52,7 @@ DEBUG = config.getboolean('server', 'debug')
 STATIC_FILES_CONFIG = {
     'js': {
         'path': str(JS_DIR),
-        'url_prefix': '/js',
+        'url_prefix': '/htmljs',
         'enabled': config.getboolean('static_files', 'enable_js_exposure') if 'static_files' in config else True,
         'files': [
             'index.js',
@@ -60,6 +60,14 @@ STATIC_FILES_CONFIG = {
             'd3.min.js',
             'style.css',
             'browser/index.js'
+        ]
+    },
+    'html': {
+        'path': str(STATIC_HTML_DIR),
+        'url_prefix': '/html',
+        'enabled': config.getboolean('static_files', 'enable_js_exposure') if 'static_files' in config else True,
+        'files': [
+            '*.html'
         ]
     },
     'static': {
@@ -112,7 +120,9 @@ def get_available_js_files():
 def get_static_file_url(file_path: str, static_type: str = 'js') -> str:
     """获取静态文件的访问URL"""
     if static_type == 'js':
-        return f"http://{SERVER_HOST}:{SERVER_PORT}/js/{file_path}"
+        return f"http://{SERVER_HOST}:{SERVER_PORT}/htmljs/{file_path}"
+    elif static_type == 'html':
+        return f"http://{SERVER_HOST}:{SERVER_PORT}/html/{file_path}"
     elif static_type == 'static':
         return f"http://{SERVER_HOST}:{SERVER_PORT}/static/{file_path}"
     return None

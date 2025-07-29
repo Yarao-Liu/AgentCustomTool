@@ -45,7 +45,8 @@ def root():
                 "list": "GET /files - 获取文件列表"
             },
             "static_files": {
-                "js": "GET /js/* - 访问JavaScript文件",
+                "htmljs": "GET /htmljs/* - 访问JavaScript文件",
+                "html": "GET /html/* - 访问HTML文件(思维导图)",
                 "static": "GET /static/* - 访问静态文件"
             }
         },
@@ -59,7 +60,7 @@ def root():
         }
     }
 
-@app.get("/js-files")
+@app.get("/htmljs-files")
 def list_js_files():
     """列出所有可用的JS文件"""
     js_files = get_available_js_files()
