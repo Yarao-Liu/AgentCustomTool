@@ -1,4 +1,4 @@
-.mm-toolbar {display:flex;-webkit-user-select:none;-moz-user-select:none;user-select:none;align-items:center;border-width:1px;--un-border-opacity:1;border-color:rgb(212 212 216 / var(--un-border-opacity));border-radius:0.25rem;border-style:solid;--un-bg-opacity:1;background-color:rgb(255 255 255 / var(--un-bg-opacity));padding:0.25rem;line-height:1;
+.mm-toolbar {display:none;-webkit-user-select:none;-moz-user-select:none;user-select:none;align-items:center;border-width:1px;--un-border-opacity:1;border-color:rgb(212 212 216 / var(--un-border-opacity));border-radius:0.25rem;border-style:solid;--un-bg-opacity:1;background-color:rgb(255 255 255 / var(--un-bg-opacity));padding:0.25rem;line-height:1;
 }
   .mm-toolbar:hover {--un-border-opacity:1;border-color:rgb(161 161 170 / var(--un-border-opacity));
   }
