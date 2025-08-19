@@ -278,4 +278,58 @@
   let Toolbar = _Toolbar;
   exports.Toolbar = Toolbar;
   Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
+
+  // 添加保存图片功能
+  function saveAsImage() {
+      // 获取思维导图容器
+      const mindmapContainer = document.querySelector('.mindmap-container') || document.body;
+      
+      // 使用html2canvas将页面转换为图片
+      html2canvas(mindmapContainer, {
+          useCORS: true,
+          allowTaint: true,
+          scale: 2, // 提高图片质量
+          backgroundColor: '#ffffff',
+          width: mindmapContainer.scrollWidth,
+          height: mindmapContainer.scrollHeight
+      }).then(canvas => {
+          // 创建下载链接
+          const link = document.createElement('a');
+          link.download = 'mindmap-' + new Date().getTime() + '.png';
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+      }).catch(error => {
+          console.error('保存图片失败:', error);
+          alert('保存图片失败，请重试');
+      });
+  }
+
+  // 添加保存按钮到页面
+  function addSaveButton() {
+      const saveButton = document.createElement('button');
+      saveButton.textContent = '保存为图片';
+      saveButton.style.cssText = `
+          display:none;
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 1000;
+          padding: 10px 20px;
+          background: #007bff;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 14px;
+      `;
+      saveButton.onclick = saveAsImage;
+      document.body.appendChild(saveButton);
+  }
+
+  // 页面加载完成后添加保存按钮
+  if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', addSaveButton);
+  } else {
+      addSaveButton();
+  }
 })(this.markmap = this.markmap || {});
