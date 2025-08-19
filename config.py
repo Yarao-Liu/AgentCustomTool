@@ -56,7 +56,6 @@ STATIC_FILES_CONFIG = {
         'enabled': config.getboolean('static_files', 'enable_js_exposure') if 'static_files' in config else True,
         'files': [
             'index.js',
-            'index2.js',
             'd3.min.js',
             'style.css',
             'browser/index.js'
