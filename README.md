@@ -4,6 +4,13 @@
 
 ## 🆕 最新功能特性
 
+### 📝 文本保存与预览功能
+- ✅ **文本内容保存** - 支持将任意文本内容保存为文件
+- ✅ **自动文件分类** - 文本文件自动保存到 `text_files/` 子目录
+- ✅ **即时预览链接** - 保存后立即返回可在浏览器中查看的预览地址
+- ✅ **智能文件命名** - 支持用户自定义文件名，自动添加时间戳防冲突
+- ✅ **多格式支持** - 默认 `.txt` 格式，支持自定义扩展名
+
 ### 🎨 SVG矢量图下载功能
 - ✅ **高质量SVG矢量图生成** - 支持任意缩放，永不失真
 - ✅ **智能页面操作禁止** - 生成过程中自动禁止所有用户操作
@@ -33,6 +40,9 @@
 - ✅ 唯一文件名生成（避免冲突）
 - ✅ 文件大小限制（50MB）
 - ✅ 流式文件处理（避免内存问题）
+- ✅ **新增：文本内容直接保存为文件**
+- ✅ **新增：文件预览URL即时生成**
+- ✅ **新增：自动子目录分类存储**
 
 ### 🌐 静态文件暴露功能
 - ✅ JS 文件通过 HTTP 端口对外暴露
@@ -139,8 +149,19 @@ python main.py
   - 参数: `file` (multipart/form-data)
   - 返回: 文件信息和下载链接
 
-- **GET** `/download/{filename}` - 下载或预览文件
+- **POST** `/save` - **新增：保存文本内容为文件**
+  - 参数: `text_content` (文本内容), `filename` (文件名)
+  - 返回: 文件预览URL，可直接在浏览器中查看
+  - **功能**: 将用户输入的文本内容保存到 `static/text_files/` 目录
+
+- **GET** `/download/{file_path:path}` - 下载或预览文件
   - 支持浏览器直接打开 PDF、图片等文件
+  - 支持子目录路径，如 `text_files/filename.txt`
+
+- **GET** `/preview/{file_path:path}` - **新增：文件预览功能**
+  - 在浏览器中直接显示文件内容
+  - 主要用于文本文件的在线预览
+  - 支持子目录路径访问
 
 - **GET** `/files` - 获取所有已上传文件列表
   - 返回: 文件列表，包含文件名、大小、修改时间和下载链接
@@ -216,11 +237,30 @@ curl -X GET "http://localhost:6066/download/filename.pdf"
 curl -X GET "http://localhost:6066/js-files"
 ```
 
-### 7. 访问 JS 文件
+### 8. **新增：保存文本内容为文件**
 
 ```bash
-curl -X GET "http://localhost:6066/js/index.js"
+curl -X POST "http://localhost:6066/save" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "text_content=这是我要保存的文本内容&filename=my_document.txt"
 ```
+
+**功能说明**：
+- 将任意文本内容保存为文件到服务器
+- 文件自动保存到 `static/text_files/` 目录
+- 返回可直接在浏览器中查看的预览URL
+- 支持自定义文件名和扩展名
+
+### 9. **新增：预览保存的文本文件**
+
+```bash
+curl -X GET "http://localhost:6066/preview/text_files/my_document.txt"
+```
+
+**功能说明**：
+- 直接在浏览器中预览保存的文本文件
+- 支持子目录路径访问
+- 适用于各种文本文件格式的在线查看
 
 ## 🆕 SVG下载功能详解
 
@@ -354,6 +394,8 @@ mindmap/
 │   ├── index2.js          # 备用 JavaScript 文件
 │   └── style.css          # 样式文件
 ├── static/                # 静态文件目录
+│   ├── text_files/        # 文本文件存储目录（新增）
+│   │   ├── *.txt         # 保存的文本文件
 │   ├── *.pdf             # 上传的文件
 │   ├── *.png             # 上传的图片
 │   ├── markdown/         # Markdown 文件存储目录
