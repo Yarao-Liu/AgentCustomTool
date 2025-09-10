@@ -8,7 +8,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any
 from fastapi import Request, UploadFile, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from config import (
     STATIC_DIR, MAX_FILE_SIZE, CHUNK_SIZE,
     ALLOWED_EXTENSIONS, MIME_TYPES, DEFAULT_MIME_TYPE
@@ -41,6 +41,12 @@ class FileService:
         """根据文件扩展名获取MIME类型"""
         file_extension = Path(filename).suffix.lower()
         return MIME_TYPES.get(file_extension, DEFAULT_MIME_TYPE)
+    
+    @staticmethod
+    def get_preview_url(request: Request, filename: str) -> str:
+        """获取文件预览URL"""
+        base_url = str(request.base_url)
+        return f"{base_url}preview/{filename}"
     
     @staticmethod
     async def upload_file(request: Request, file: UploadFile) -> Dict[str, Any]:
@@ -134,6 +140,130 @@ class FileService:
         )
     
     @staticmethod
+    def preview_file(filename: str) -> Response:
+        """
+        预览文件（在浏览器中直接显示）
+        主要用于文本文件的预览
+        """
+        # 支持子目录路径，如 text_files/filename.txt
+        file_path = STATIC_DIR / filename
+        
+        print(f"DEBUG: 预览文件请求: {filename}")
+        print(f"DEBUG: 完整路径: {file_path}")
+        print(f"DEBUG: 文件是否存在: {file_path.exists()}")
+        print(f"DEBUG: STATIC_DIR: {STATIC_DIR}")
+        
+        if not file_path.exists():
+            # 列出static目录下的所有文件来帮助调试
+            if STATIC_DIR.exists():
+                print(f"DEBUG: static目录内容:")
+                for item in STATIC_DIR.rglob('*'):
+                    if item.is_file():
+                        print(f"  - {item.relative_to(STATIC_DIR)}")
+            raise HTTPException(status_code=404, detail=f"文件不存在: {file_path}")
+        
+        # 读取文件内容
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except UnicodeDecodeError:
+            # 如果UTF-8解码失败，尝试其他编码
+            try:
+                with open(file_path, 'r', encoding='gbk') as f:
+                    content = f.read()
+            except UnicodeDecodeError:
+                # 如果还是失败，返回二进制内容
+                with open(file_path, 'rb') as f:
+                    content = f.read().decode('utf-8', errors='ignore')
+        
+        # 根据文件扩展名确定内容类型
+        file_extension = Path(filename).suffix.lower()
+        
+        if file_extension == '.html':
+            # HTML文件，直接渲染
+            media_type = 'text/html; charset=utf-8'
+        elif file_extension == '.css':
+            # CSS文件，直接渲染
+            media_type = 'text/css; charset=utf-8'
+        elif file_extension == '.js':
+            # JavaScript文件，直接渲染
+            media_type = 'application/javascript; charset=utf-8'
+        elif file_extension in ['.txt', '.md', '.json', '.xml', '.csv', '.log']:
+            # 文本文件，在浏览器中显示
+            media_type = 'text/plain; charset=utf-8'
+        else:
+            # 其他文件类型，尝试作为文本显示
+            media_type = 'text/plain; charset=utf-8'
+        
+        # 获取纯文件名（不包含路径）
+        display_filename = Path(filename).name
+        
+        return Response(
+            content=content,
+            media_type=media_type,
+            headers={
+                "Content-Disposition": f"inline; filename={display_filename}",
+                "Cache-Control": "no-cache"
+            }
+        )
+    
+    @staticmethod
+    def save_text_to_file(request: Request, text_content: str, filename: str) -> str:
+        """
+        将文本内容保存为文件
+        """
+        try:
+            # 创建文本文件专用目录
+            text_files_dir = STATIC_DIR / "text_files"
+            text_files_dir.mkdir(exist_ok=True)
+            
+            # 验证文件名
+            if not filename or not filename.strip():
+                raise HTTPException(status_code=400, detail="文件名不能为空")
+            
+            # 清理文件名，移除非法字符
+            import re
+            clean_filename = re.sub(r'[<>:"/\\|?*]', '_', filename.strip())
+            
+            # 如果没有扩展名，默认添加.txt
+            if not Path(clean_filename).suffix:
+                clean_filename += '.txt'
+            
+            # 检查文件是否已存在，如果存在则添加时间戳
+            file_path = text_files_dir / clean_filename
+            if file_path.exists():
+                timestamp = str(int(time.time()))
+                name_part = Path(clean_filename).stem
+                ext_part = Path(clean_filename).suffix
+                clean_filename = f"{name_part}_{timestamp}{ext_part}"
+                file_path = text_files_dir / clean_filename
+            
+            # 保存文本内容到文件
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(text_content)
+            
+            print(f"DEBUG: 文件已保存到: {file_path}")
+            print(f"DEBUG: 文件是否存在: {file_path.exists()}")
+            
+            # 获取文件大小
+            file_size = file_path.stat().st_size
+            
+            # 返回预览链接
+            preview_url = FileService.get_preview_url(request, f"text_files/{clean_filename}")
+            print(f"DEBUG: 生成的预览URL: {preview_url}")
+            
+            return preview_url
+            
+        except HTTPException:
+            # 重新抛出HTTP异常
+            raise
+        except Exception as e:
+            # 清理可能创建的文件
+            if 'file_path' in locals() and file_path.exists():
+                file_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=500, detail=f"保存文本文件失败: {str(e)}")
+    
+    @staticmethod
     def list_files(request: Request) -> Dict[str, List[Dict[str, Any]]]:
         """
         获取static目录中所有文件的列表
@@ -145,16 +275,22 @@ class FileService:
             files = []
             base_url = str(request.base_url)
             
-            for file_path in STATIC_DIR.iterdir():
+            # 遍历static目录及其子目录
+            for file_path in STATIC_DIR.rglob('*'):
                 if file_path.is_file() and not file_path.name.startswith('.'):
-                    # 跳过html子目录中的文件，只列出static根目录的文件
-                    if file_path.parent.name == 'static':
+                    # 跳过html子目录中的文件，但包含text_files目录
+                    if file_path.parent.name in ['static', 'text_files']:
+                        # 计算相对路径
+                        relative_path = file_path.relative_to(STATIC_DIR)
                         stat = file_path.stat()
+                        
                         files.append({
-                            "filename": file_path.name,
+                            "filename": str(relative_path),
                             "size": stat.st_size,
                             "modified_time": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                            "download_url": f"{base_url}download/{file_path.name}"
+                            "download_url": f"{base_url}download/{relative_path}",
+                            "preview_url": f"{base_url}preview/{relative_path}",
+                            "category": "text_files" if "text_files" in str(relative_path) else "uploaded"
                         })
             
             return {"files": files}

@@ -1,7 +1,7 @@
 """
 FastAPI 主应用程序
 """
-from fastapi import FastAPI, Request, File, UploadFile
+from fastapi import FastAPI, Request, File, UploadFile, Form
 from fastapi.staticfiles import StaticFiles
 from module.mindmap_service import MindmapService
 from module.file_service import FileService
@@ -41,8 +41,10 @@ def root():
             },
             "file_management": {
                 "upload": "POST /upload-file - 上传文件",
-                "download": "GET /download/{filename} - 下载文件",
-                "list": "GET /files - 获取文件列表"
+                "download": "GET /download/{file_path:path} - 下载文件",
+                "preview": "GET /preview/{file_path:path} - 预览文件（浏览器直接显示）",
+                "list": "GET /files - 获取文件列表",
+                "save": "POST /save - 保存文本内容为文件"
             },
             "static_files": {
                 "htmljs": "GET /htmljs/* - 访问JavaScript文件",
@@ -111,13 +113,23 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
     """
     return await FileService.upload_file(request, file)
 
-@app.get("/download/{filename}")
-def download_file(filename: str):
+@app.get("/download/{file_path:path}")
+def download_file(file_path: str):
     """
     下载或预览文件
     支持浏览器直接打开PDF、图片等文件
+    支持子目录路径，如 text_files/filename.txt
     """
-    return FileService.download_file(filename)
+    return FileService.download_file(file_path)
+
+@app.get("/preview/{file_path:path}")
+def preview_file(file_path: str):
+    """
+    预览文件（在浏览器中直接显示）
+    主要用于文本文件的预览
+    支持子目录路径，如 text_files/filename.txt
+    """
+    return FileService.preview_file(file_path)
 
 @app.get("/files")
 def list_files(request: Request):
@@ -125,6 +137,18 @@ def list_files(request: Request):
     获取所有已上传文件列表
     """
     return FileService.list_files(request)
+
+@app.post("/save")
+async def save_text_to_file(request: Request, text_content: str = Form(...), filename: str = Form(...)):
+    """
+    将用户输入的文本保存为文件，返回预览地址
+    文件将保存到 static/text_files/ 目录下
+    参数:
+    - text_content: 要保存的文本内容
+    - filename: 文件名（可选扩展名，默认.txt）
+    返回: 文件的预览地址（可在浏览器中直接查看）
+    """
+    return FileService.save_text_to_file(request, text_content, filename)
 
 # ==================== 应用启动 ====================
 
