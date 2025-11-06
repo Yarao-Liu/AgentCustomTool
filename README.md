@@ -30,6 +30,7 @@
 - ✅ **新增：一键下载SVG矢量图**
 - ✅ **新增：页面操作智能禁止**
 - ✅ **新增：图标化用户界面**
+- ✅ **新增：通过配置文件控制SVG下载按钮显示**
 - ✅ 模块化服务架构
 
 ### 📁 文件管理功能
@@ -118,6 +119,7 @@ python main.py
 - 文件上传大小限制
 - 调试模式开关
 - 静态文件暴露配置
+- 思维导图SVG下载按钮显示控制
 
 ### 启动服务
 
@@ -141,6 +143,11 @@ python main.py
   - 请求体: Markdown 文本内容
   - 返回: 思维导图预览链接（包含SVG下载功能）
   - **新功能**: 支持一键下载SVG矢量图
+
+- **POST** `/upload-local` - 上传 Markdown 文本，生成思维导图（使用本地资源）
+  - 请求体: Markdown 文本内容
+  - 返回: 思维导图预览链接
+  - **功能**: 使用本地资源替代CDN，支持通过配置控制SVG下载按钮显示
 
 - **GET** `/html/{filename}` - 查看生成的思维导图 HTML
 
@@ -212,6 +219,27 @@ curl -X POST "http://localhost:6066/upload2" \
 - 点击按钮可下载高质量的SVG矢量图
 - 支持任意缩放，永不失真
 
+### 2.1. 生成使用本地资源的思维导图（可配置SVG下载按钮）
+
+```bash
+curl -X POST "http://localhost:6066/upload-local" \
+  -H "Content-Type: text/plain" \
+  -d "# 我的思维导图
+## 分支1
+- 子项1
+- 子项2
+## 分支2
+- 子项A
+- 子项B"
+```
+
+**功能说明**：
+- 使用 `/upload-local` 接口生成的思维导图使用本地资源替代CDN
+- 通过 `config.ini` 中的 `enable_svg_download_button` 配置项控制是否显示SVG下载按钮
+- 当 `enable_svg_download_button = true` 时，页面右上角会显示"下载SVG"按钮
+- 当 `enable_svg_download_button = false` 时，生成纯思维导图页面，不显示下载按钮
+- 适合需要控制SVG下载功能显示的场景
+
 ### 3. 上传文件
 
 ```bash
@@ -237,7 +265,7 @@ curl -X GET "http://localhost:6066/download/filename.pdf"
 curl -X GET "http://localhost:6066/js-files"
 ```
 
-### 8. **新增：保存文本内容为文件**
+### 7. 保存文本内容为文件
 
 ```bash
 curl -X POST "http://localhost:6066/save" \
@@ -251,7 +279,7 @@ curl -X POST "http://localhost:6066/save" \
 - 返回可直接在浏览器中查看的预览URL
 - 支持自定义文件名和扩展名
 
-### 9. **新增：预览保存的文本文件**
+### 8. 预览保存的文本文件
 
 ```bash
 curl -X GET "http://localhost:6066/preview/text_files/my_document.txt"
@@ -288,7 +316,7 @@ curl -X GET "http://localhost:6066/preview/text_files/my_document.txt"
 
 ### 使用流程
 
-1. **访问思维导图页面** - 使用 `/upload2` 接口生成的页面
+1. **访问思维导图页面** - 使用 `/upload2` 或 `/upload-local` 接口生成的页面（`/upload-local` 需要配置 `enable_svg_download_button = true`）
 2. **点击下载按钮** - 页面右上角的"下载SVG"按钮
 3. **等待生成完成** - 系统自动禁止页面操作，显示进度
 4. **自动下载文件** - 生成完成后自动下载SVG文件
@@ -300,6 +328,7 @@ curl -X GET "http://localhost:6066/preview/text_files/my_document.txt"
 - **页面操作禁止** - 事件监听器拦截所有用户操作
 - **状态管理** - 图标和文字的动态更新
 - **错误恢复** - 多层备用方案确保成功率
+- **配置驱动** - 通过配置文件灵活控制功能开关
 
 ## 打包部署
 
@@ -352,6 +381,7 @@ python -m PyInstaller --onefile --add-data "config.ini;." --add-data "js;js" --a
 - 读取 ini 配置文件
 - 集中化配置常量管理
 - 静态文件暴露配置
+- 思维导图功能配置
 - 目录路径管理
 - MIME 类型映射
 - 配置参数类型转换
@@ -364,6 +394,7 @@ python -m PyInstaller --onefile --add-data "config.ini;." --add-data "js;js" --a
 - **新增：SVG矢量图下载功能**
 - **新增：页面操作智能禁止**
 - **新增：图标化用户界面**
+- **新增：通过配置文件控制SVG下载按钮显示**
 
 #### 4. module/file_service.py - 文件管理服务
 - `FileService` 类封装所有文件操作
@@ -427,8 +458,11 @@ chunk_size_kb = 8
 [static_files]
 enable_js_exposure = true
 enable_static_exposure = true
-js_directory = js
+js_directory = htmljs
 static_directory = static
+
+[mindmap]
+enable_svg_download_button = true
 ```
 
 #### 配置说明
@@ -445,8 +479,13 @@ static_directory = static
 **静态文件配置 [static_files]**
 - `enable_js_exposure`: 是否启用 JS 文件暴露（默认 true）
 - `enable_static_exposure`: 是否启用静态文件暴露（默认 true）
-- `js_directory`: JS 文件目录（默认 js）
+- `js_directory`: JS 文件目录（默认 htmljs）
 - `static_directory`: 静态文件目录（默认 static）
+
+**思维导图配置 [mindmap]**
+- `enable_svg_download_button`: 是否在 `/upload-local` 接口生成的思维导图中显示SVG下载按钮（默认 true）
+  - `true`: 显示下载SVG按钮，用户可以在思维导图页面下载SVG矢量图
+  - `false`: 不显示下载SVG按钮，生成纯思维导图页面
 
 ## 🆕 SVG下载功能详解
 
@@ -474,11 +513,22 @@ static_directory = static
 
 ### 使用流程
 
-1. **访问思维导图页面** - 使用 `/upload2` 接口生成的页面
+1. **访问思维导图页面** - 使用 `/upload2` 或 `/upload-local` 接口生成的页面（需要配置 `enable_svg_download_button = true`）
 2. **点击下载按钮** - 页面右上角的"下载SVG"按钮
 3. **等待生成完成** - 系统自动禁止页面操作，显示进度
 4. **自动下载文件** - 生成完成后自动下载SVG文件
 5. **恢复页面操作** - 自动恢复所有页面功能
+
+### 配置控制
+
+通过 `config.ini` 中的 `[mindmap]` 配置段可以控制 `/upload-local` 接口生成的思维导图页面是否显示SVG下载按钮：
+
+```ini
+[mindmap]
+enable_svg_download_button = true   # 显示下载SVG按钮
+# 或
+enable_svg_download_button = false  # 不显示下载SVG按钮
+```
 
 ### 技术实现
 
@@ -486,6 +536,7 @@ static_directory = static
 - **页面操作禁止** - 事件监听器拦截所有用户操作
 - **状态管理** - 图标和文字的动态更新
 - **错误恢复** - 多层备用方案确保成功率
+- **配置驱动** - 通过配置文件灵活控制功能开关
 
 ## 测试功能
 
@@ -516,7 +567,7 @@ python test_js_exposure.py
 9. **静态文件暴露**: JS 文件通过 HTTP 端口对外暴露，支持跨域访问
 10. **打包部署**: 支持 PyInstaller 单文件打包，便于部署
 11. **离线部署**: 需要是 npm install markmap --prefix ./node_modules_global 将依赖存储到当前的文件夹以备迁移
-12. **SVG下载功能**: 使用 `/upload2` 接口生成的思维导图支持SVG下载
+12. **SVG下载功能**: 使用 `/upload2` 或 `/upload-local` 接口生成的思维导图支持SVG下载（`/upload-local` 需要配置 `enable_svg_download_button = true`）
 13. **页面操作禁止**: SVG生成过程中会自动禁止所有页面操作
 14. **图标化界面**: 下载按钮使用图标+文字组合，界面更美观
 15. **SVG格式优势**: SVG矢量图支持任意缩放，永不失真，适合打印和展示
