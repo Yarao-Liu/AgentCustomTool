@@ -139,11 +139,6 @@ python main.py
   - 请求体: Markdown 文本内容
   - 返回: 思维导图预览链接
 
-- **POST** `/upload2` - 上传 Markdown 文本，生成可下载SVG的思维导图
-  - 请求体: Markdown 文本内容
-  - 返回: 思维导图预览链接（包含SVG下载功能）
-  - **新功能**: 支持一键下载SVG矢量图
-
 - **POST** `/upload-local` - 上传 Markdown 文本，生成思维导图（使用本地资源）
   - 请求体: Markdown 文本内容
   - 返回: 思维导图预览链接
@@ -199,27 +194,7 @@ curl -X POST "http://localhost:6066/upload" \
 - 子项B"
 ```
 
-### 2. 生成可下载SVG的思维导图
-
-```bash
-curl -X POST "http://localhost:6066/upload2" \
-  -H "Content-Type: text/plain" \
-  -d "# 我的思维导图
-## 分支1
-- 子项1
-- 子项2
-## 分支2
-- 子项A
-- 子项B"
-```
-
-**新功能说明**：
-- 使用 `/upload2` 接口生成的思维导图包含SVG下载功能
-- 页面右上角会显示"下载SVG"按钮
-- 点击按钮可下载高质量的SVG矢量图
-- 支持任意缩放，永不失真
-
-### 2.1. 生成使用本地资源的思维导图（可配置SVG下载按钮）
+### 2. 生成使用本地资源的思维导图（可配置SVG下载按钮）
 
 ```bash
 curl -X POST "http://localhost:6066/upload-local" \
