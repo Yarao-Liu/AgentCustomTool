@@ -87,7 +87,7 @@ async def upload_markdown(request: Request):
     return preview_url
 
 
-@app.post("/upload2")
+@app.post("/upload-local")
 async def upload_markdown_replace(request: Request):
     """
     上传Markdown文本，生成思维导图

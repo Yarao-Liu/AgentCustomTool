@@ -8,7 +8,7 @@ import subprocess
 import shutil
 from fastapi import Request, HTTPException
 from fastapi.responses import FileResponse
-from config import MARKDOWN_DIR, STATIC_HTML_DIR
+from config import MARKDOWN_DIR, STATIC_HTML_DIR, ENABLE_SVG_DOWNLOAD_BUTTON
 
 
 class MindmapService:
@@ -189,8 +189,12 @@ class MindmapService:
             html_content = html_content.replace('https://cdn.jsdelivr.net/npm/markmap-toolbar@0.18.10/dist', '../htmljs')
             html_content = html_content.replace('https://cdn.jsdelivr.net/npm/markmap-view@0.18.10/dist/browser/index.js', '../htmljs/index2.js')
             html_content = html_content.replace('https://cdn.jsdelivr.net/npm/markmap-toolbar@0.18.10/dist', '../htmljs')
-            # 注入保存图片的JavaScript代码
-            html_content = MindmapService.inject_save_image_script(html_content)
+            # 根据配置决定是否注入保存图片的JavaScript代码
+            if ENABLE_SVG_DOWNLOAD_BUTTON:
+                html_content = MindmapService.inject_save_image_script(html_content)
+                print("已注入下载SVG按钮功能")
+            else:
+                print("根据配置，未注入下载SVG按钮功能")
             
             # 写回文件
             with open(target_path, 'w', encoding='utf-8') as f:

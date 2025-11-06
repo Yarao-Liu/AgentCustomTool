@@ -78,6 +78,9 @@ STATIC_FILES_CONFIG = {
     }
 }
 
+# 思维导图配置
+ENABLE_SVG_DOWNLOAD_BUTTON = config.getboolean('mindmap', 'enable_svg_download_button') if 'mindmap' in config and config.has_option('mindmap', 'enable_svg_download_button') else True
+
 # 允许的文件类型
 ALLOWED_EXTENSIONS = {
     '.txt', '.md', '.pdf', '.png', '.jpg', '.jpeg', '.gif', '.doc', '.docx',
